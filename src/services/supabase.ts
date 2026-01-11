@@ -34,6 +34,13 @@ export interface UserProfile {
   username?: string;
   created_at: string;
   updated_at?: string;
+  // Onboarding fields
+  height?: number;
+  weight?: number;
+  unit_preference?: 'metric' | 'imperial';
+  birth_date?: string;
+  referral_source?: string;
+  onboarding_completed?: boolean;
 }
 
 // Type definitions for analysis history

@@ -486,6 +486,42 @@ export const ProfileScreen = ({ navigation }: any) => {
             <Text style={styles.joinDate}>Member since {new Date(profile.joinDate).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</Text>
           </View>
 
+          {/* Personal Stats - Display onboarding data */}
+          {(authProfile?.height || authProfile?.weight || authProfile?.birth_date) && (
+            <View style={styles.personalStatsSection}>
+              <Text style={styles.sectionTitle}>Personal Stats</Text>
+              <View style={styles.personalStatsGrid}>
+                {authProfile?.height && (
+                  <View style={styles.personalStatItem}>
+                    <Icon name="human-male-height" size={24} color="#4A90E2" />
+                    <Text style={styles.personalStatLabel}>Height</Text>
+                    <Text style={styles.personalStatValue}>
+                      {authProfile.height} {authProfile.unit_preference === 'imperial' ? 'in' : 'cm'}
+                    </Text>
+                  </View>
+                )}
+                {authProfile?.weight && (
+                  <View style={styles.personalStatItem}>
+                    <Icon name="weight" size={24} color="#50C878" />
+                    <Text style={styles.personalStatLabel}>Weight</Text>
+                    <Text style={styles.personalStatValue}>
+                      {authProfile.weight} {authProfile.unit_preference === 'imperial' ? 'lbs' : 'kg'}
+                    </Text>
+                  </View>
+                )}
+                {authProfile?.birth_date && (
+                  <View style={styles.personalStatItem}>
+                    <Icon name="cake-variant" size={24} color="#FF6B35" />
+                    <Text style={styles.personalStatLabel}>Age</Text>
+                    <Text style={styles.personalStatValue}>
+                      {Math.floor((new Date().getTime() - new Date(authProfile.birth_date).getTime()) / (365.25 * 24 * 60 * 60 * 1000))} years
+                    </Text>
+                  </View>
+                )}
+              </View>
+            </View>
+          )}
+
           {/* Subscription Banner - Only show if user doesn't have active subscription */}
           {!subscriptionState.isSubscribed && (
             <TouchableOpacity
@@ -1047,6 +1083,36 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#FFFFFF',
     marginBottom: 8,
+  },
+  personalStatsSection: {
+    paddingHorizontal: 20,
+    marginBottom: 30,
+  },
+  personalStatsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  personalStatItem: {
+    flex: 1,
+    minWidth: '30%',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 16,
+    padding: 16,
+    alignItems: 'center',
+  },
+  personalStatLabel: {
+    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.7)',
+    marginTop: 8,
+    marginBottom: 4,
+    textAlign: 'center',
+  },
+  personalStatValue: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    textAlign: 'center',
   },
   highlightsSection: {
     paddingHorizontal: 20,

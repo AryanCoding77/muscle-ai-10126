@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase, UserProfile, getUserProfile } from '../services/supabase';
 import { Alert } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
@@ -191,10 +192,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         // Fetch user profile in background (don't block UI)
         getUserProfile(session.user.id)
-          .then((userProfile) => {
+          .then(async (userProfile) => {
             if (userProfile) {
               console.log('✅ AuthContext: Profile loaded');
               setProfile(userProfile);
+              // Check if there's pending onboarding data for existing users
+              await saveOnboardingData(session.user.id);
             } else {
               console.log('⚠️ AuthContext: No profile found, creating...');
               return createProfile(session.user);
@@ -233,9 +236,48 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.error('Error creating profile:', error);
       } else {
         setProfile(profileData);
+        // Save pending onboarding data after profile is created
+        await saveOnboardingData(user.id);
       }
     } catch (error) {
       console.error('Error in createProfile:', error);
+    }
+  };
+
+  const saveOnboardingData = async (userId: string) => {
+    try {
+      // Check if there's pending onboarding data
+      const pendingData = await AsyncStorage.getItem('pendingOnboardingData');
+      
+      if (pendingData) {
+        const onboardingData = JSON.parse(pendingData);
+        console.log('📝 Saving onboarding data to database:', onboardingData);
+
+        // Update the user's profile with onboarding data
+        const { error } = await supabase
+          .from('profiles')
+          .update({
+            height: onboardingData.height,
+            weight: onboardingData.weight,
+            unit_preference: onboardingData.unit,
+            birth_date: onboardingData.birthDate,
+            referral_source: onboardingData.source,
+            onboarding_completed: true,
+          })
+          .eq('id', userId);
+
+        if (error) {
+          console.error('❌ Error saving onboarding data:', error);
+        } else {
+          console.log('✅ Onboarding data saved successfully');
+          // Clear the pending data
+          await AsyncStorage.removeItem('pendingOnboardingData');
+          // Refresh profile to get updated data
+          await refreshProfile();
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error in saveOnboardingData:', error);
     }
   };
 
