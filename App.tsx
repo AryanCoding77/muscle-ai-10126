@@ -20,6 +20,7 @@ import { HistoryScreen } from './src/screens/HistoryScreen';
 import { ComparisonScreen } from './src/screens/ComparisonScreen';
 import { LoginScreen } from './src/screens/LoginScreen';
 import { LoadingScreen } from './src/screens/LoadingScreen';
+import { OnboardingFlow } from './src/screens/OnboardingFlow';
 import { COLORS } from './src/config/constants';
 import { CustomTabBar } from './src/components/navigation/CustomTabBar';
 import { SettingsScreen } from './src/screens/SettingsScreen';
@@ -32,6 +33,7 @@ import { PrivacyPolicyScreen } from './src/screens/PrivacyPolicyScreen';
 import { TermsConditionsScreen } from './src/screens/TermsConditionsScreen';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
 import { NotificationProvider } from './src/context/NotificationContext';
+import { ErrorBoundary } from './src/components/ErrorBoundary';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -99,6 +101,14 @@ function TabNavigator() {
 
 // Auth Stack Navigator for unauthenticated users
 function AuthStackNavigator() {
+  // Onboarding enabled - shows before login
+  const [showOnboarding, setShowOnboarding] = React.useState(true);
+
+  const handleOnboardingComplete = React.useCallback(() => {
+    console.log('Onboarding completed, showing login');
+    setShowOnboarding(false);
+  }, []);
+
   return (
     <Stack.Navigator
       screenOptions={{
@@ -109,9 +119,21 @@ function AuthStackNavigator() {
         animation: 'slide_from_right',
       }}
     >
-      <Stack.Screen name="Login" component={LoginScreen as unknown as React.ComponentType<any>} />
-      <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen as unknown as React.ComponentType<any>} />
-      <Stack.Screen name="TermsConditions" component={TermsConditionsScreen as unknown as React.ComponentType<any>} />
+      {showOnboarding ? (
+        <Stack.Screen name="Onboarding" options={{ gestureEnabled: false }}>
+          {() => (
+            <ErrorBoundary>
+              <OnboardingFlow onComplete={handleOnboardingComplete} />
+            </ErrorBoundary>
+          )}
+        </Stack.Screen>
+      ) : (
+        <>
+          <Stack.Screen name="Login" component={LoginScreen as unknown as React.ComponentType<any>} />
+          <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen as unknown as React.ComponentType<any>} />
+          <Stack.Screen name="TermsConditions" component={TermsConditionsScreen as unknown as React.ComponentType<any>} />
+        </>
+      )}
     </Stack.Navigator>
   );
 }
