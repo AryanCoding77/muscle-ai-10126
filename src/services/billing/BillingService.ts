@@ -12,11 +12,20 @@ import {
   purchaseErrorListener,
   finishTransaction,
   acknowledgePurchaseAndroid,
-  isFeatureSupported,
   Product,
   Purchase,
   PurchaseError,
 } from 'react-native-iap';
+
+// Import isFeatureSupported separately as it may not be available in all versions
+let isFeatureSupported: ((feature: string) => Promise<boolean>) | undefined;
+try {
+  const iap = require('react-native-iap');
+  isFeatureSupported = iap.isFeatureSupported;
+} catch (e) {
+  console.log('⚠️ isFeatureSupported not available in this version of react-native-iap');
+}
+
 import { Platform } from 'react-native';
 import { checkInstaller, STRICT_INSTALLER_CHECK } from '../../utils/installerCheck';
 
@@ -124,17 +133,23 @@ class BillingServiceClass {
       // Check if subscriptions are supported (CRITICAL CHECK)
       console.log('🔍 Checking subscription feature support...');
       try {
-        this.subscriptionsSupported = await isFeatureSupported('subscriptions');
-        console.log('✅ Subscriptions supported:', this.subscriptionsSupported);
-        
-        if (!this.subscriptionsSupported) {
-          this.isConnecting = false;
-          console.error('❌ SUBSCRIPTIONS NOT SUPPORTED on this device/build');
-          return {
-            success: false,
-            code: 'FEATURE_NOT_SUPPORTED',
-            message: 'Subscriptions are not supported. Ensure app is installed from Play Store.',
-          };
+        // Check if isFeatureSupported is available in this version of react-native-iap
+        if (typeof isFeatureSupported === 'function') {
+          this.subscriptionsSupported = await isFeatureSupported('subscriptions');
+          console.log('✅ Subscriptions supported:', this.subscriptionsSupported);
+          
+          if (!this.subscriptionsSupported) {
+            this.isConnecting = false;
+            console.error('❌ SUBSCRIPTIONS NOT SUPPORTED on this device/build');
+            return {
+              success: false,
+              code: 'FEATURE_NOT_SUPPORTED',
+              message: 'Subscriptions are not supported. Ensure app is installed from Play Store.',
+            };
+          }
+        } else {
+          console.log('⚠️ isFeatureSupported not available in this version of react-native-iap, assuming supported');
+          this.subscriptionsSupported = true; // Assume supported if function not available
         }
       } catch (featureError: any) {
         console.error('❌ Error checking feature support:', featureError);

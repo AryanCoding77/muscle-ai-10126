@@ -82,6 +82,7 @@ export interface CanAnalyzeResponse {
   analyses_remaining: number;
   subscription_status: string;
   plan_name: string;
+  is_free_trial?: boolean;
 }
 
 export interface RazorpayOptions {

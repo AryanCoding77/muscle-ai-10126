@@ -74,19 +74,27 @@ export const useAPIAnalysis = (options: UseAPIAnalysisOptions = {}) => {
       stateManager.reset();
       stateManager.setLoading(true, 'Checking subscription...');
 
-      // 🔒 BACKEND VALIDATION: Check if user can analyze
-      console.log('🔒 Checking subscription status from backend...');
+      // 🔒 BACKEND VALIDATION: Check if user can analyze (with free trial support)
+      console.log('🔒 Checking subscription/free trial status from backend...');
       const canAnalyze = await canUserAnalyze();
       
       if (!canAnalyze.can_analyze) {
         console.error('❌ User cannot analyze:', canAnalyze.subscription_status);
+        
+        // Determine appropriate error message based on status
+        let userMessage = 'You need an active subscription to analyze images. Please purchase a plan.';
+        
+        if (canAnalyze.subscription_status === 'free_trial' && canAnalyze.analyses_remaining === 0) {
+          userMessage = 'Your free trial has ended! You\'ve used all your free analyses. Upgrade to continue.';
+        } else if (canAnalyze.subscription_status !== 'none' && canAnalyze.subscription_status !== 'free_trial') {
+          userMessage = `You have reached your analysis limit. Remaining: ${canAnalyze.analyses_remaining}`;
+        }
+        
         const error: APIError = {
-          code: 'SUBSCRIPTION_REQUIRED',
-          message: 'Active subscription required to analyze images',
+          code: canAnalyze.is_free_trial ? 'FREE_TRIAL_ENDED' : 'SUBSCRIPTION_REQUIRED',
+          message: 'Cannot perform analysis',
           retryable: false,
-          userMessage: canAnalyze.subscription_status === 'none' 
-            ? 'You need an active subscription to analyze images. Please purchase a plan.'
-            : `You have reached your analysis limit. Remaining: ${canAnalyze.analyses_remaining}`,
+          userMessage,
         };
         stateManager.setError(error);
         stateManager.setLoading(false);
@@ -94,7 +102,8 @@ export const useAPIAnalysis = (options: UseAPIAnalysisOptions = {}) => {
         return null;
       }
 
-      console.log('✅ Subscription valid. Analyses remaining:', canAnalyze.analyses_remaining);
+      const statusType = canAnalyze.is_free_trial ? 'Free Trial' : 'Subscription';
+      console.log(`✅ ${statusType} valid. Analyses remaining:`, canAnalyze.analyses_remaining);
       stateManager.setLoading(true, 'Starting analysis...');
 
       // Check cache first if enabled

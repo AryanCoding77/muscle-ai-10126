@@ -23,12 +23,14 @@ import { APIErrorCode } from '../types/api.types';
 import { saveAnalysisWithImageUpload, supabase } from '../services/supabase';
 import { useAuth } from '../context/AuthContext';
 import { useSubscription } from '../hooks/useSubscription';
+import { FreeTrialEndedModal } from '../components/FreeTrialEndedModal';
 
 const { width } = Dimensions.get('window');
 
 export const AnalyzeScreen = ({ navigation }: any) => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [showProgress, setShowProgress] = useState(false);
+  const [showFreeTrialEndedModal, setShowFreeTrialEndedModal] = useState(false);
   const { user } = useAuth();
   
   // ✅ USE SUBSCRIPTION HOOK AS SOURCE OF TRUTH
@@ -39,7 +41,14 @@ export const AnalyzeScreen = ({ navigation }: any) => {
     result,
     analyzeImage,
     cancel,
-  } = useAPIAnalysis();
+  } = useAPIAnalysis({
+    onError: (error) => {
+      // Show free trial ended modal if that's the error
+      if (error.code === 'FREE_TRIAL_ENDED') {
+        setShowFreeTrialEndedModal(true);
+      }
+    },
+  });
 
   const pickImage = async (source: 'camera' | 'gallery') => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -74,25 +83,8 @@ export const AnalyzeScreen = ({ navigation }: any) => {
   const handleAnalyze = async () => {
     if (!selectedImage) return;
 
-    // ✅ Check if user has active subscription using client-side state
-    if (!subscriptionState.isSubscribed) {
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-      Alert.alert(
-        '🔒 Premium Feature',
-        'You need an active subscription to analyze images. Please purchase a plan to continue.',
-        [
-          {
-            text: 'View Plans',
-            onPress: () => navigation.navigate('SubscriptionPlans'),
-          },
-          {
-            text: 'Cancel',
-            style: 'cancel',
-          },
-        ]
-      );
-      return;
-    }
+    // Note: We don't check subscription here anymore because the hook will handle it
+    // and show the appropriate modal (free trial ended or subscription required)
     
     console.log('🎬 === USER INITIATED ANALYSIS ===');
     console.log('📸 Selected Image:', selectedImage);
@@ -184,46 +176,9 @@ export const AnalyzeScreen = ({ navigation }: any) => {
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={COLORS.primary} />
-          <Text style={styles.loadingText}>Checking subscription...</Text>
+          <Text style={styles.loadingText}>Loading...</Text>
         </View>
       </SafeAreaView>
-    );
-  }
-
-  // ✅ Show subscription required message if no active subscription
-  if (!subscriptionState.isSubscribed) {
-    return (
-      <ImageBackground
-        source={require('../../assets/pre-analyze-demo.png')}
-        style={styles.fullScreenBackground}
-        imageStyle={styles.demoImage}
-      >
-        <BlurView intensity={50} style={styles.blurContainer}>
-          <View style={styles.darkOverlay}>
-            <SafeAreaView style={styles.safeAreaContent}>
-              <View style={styles.premiumLockCard}>
-                <View style={styles.lockIconContainer}>
-                  <Text style={styles.lockIcon}>🔒</Text>
-                </View>
-                <Text style={styles.restrictedTitle}>Premium Feature</Text>
-                <View style={styles.premiumBadge}>
-                  <Text style={styles.premiumBadgeText}>SUBSCRIPTION REQUIRED</Text>
-                </View>
-                <Text style={styles.restrictedMessage}>
-                  Unlock AI-powered muscle analysis with detailed insights, personalized recommendations, and progress tracking.
-                </Text>
-                <TouchableOpacity
-                  style={styles.subscriptionButton}
-                  onPress={() => navigation.navigate('SubscriptionPlans')}
-                  activeOpacity={0.8}
-                >
-                  <Text style={styles.subscriptionButtonText}>🚀 View Premium Plans</Text>
-                </TouchableOpacity>
-              </View>
-            </SafeAreaView>
-          </View>
-        </BlurView>
-      </ImageBackground>
     );
   }
 
@@ -319,6 +274,17 @@ export const AnalyzeScreen = ({ navigation }: any) => {
           </View>
         </View>
       </Modal>
+
+      {/* Free Trial Ended Modal */}
+      <FreeTrialEndedModal
+        visible={showFreeTrialEndedModal}
+        onClose={() => setShowFreeTrialEndedModal(false)}
+        onViewPlans={() => {
+          setShowFreeTrialEndedModal(false);
+          navigation.navigate('SubscriptionPlans');
+        }}
+        analysesUsed={2}
+      />
 
     </SafeAreaView>
   );

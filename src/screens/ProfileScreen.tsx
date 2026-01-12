@@ -28,6 +28,7 @@ import { MaterialCommunityIcons as Icon, Ionicons } from '@expo/vector-icons';
 import { AnalysisResult } from '../types';
 import { useAuth } from '../context/AuthContext';
 import { updateUserProfile, getAnalysisHistory, AnalysisHistoryRecord, supabase } from '../services/supabase';
+import { getFreeTrialStatus } from '../services/subscriptionService';
 import { ConfirmationDialog } from '../components/ui/ConfirmationDialog';
 import { ImagePickerDialog } from '../components/ui/ImagePickerDialog';
 import { useSubscription } from '../hooks/useSubscription';
@@ -112,6 +113,7 @@ export const ProfileScreen = ({ navigation }: any) => {
   const [editUsername, setEditUsername] = useState('');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [freeTrialRemaining, setFreeTrialRemaining] = useState<number>(0);
   
   // Use subscription hook for subscription state
   const { state: subscriptionState } = useSubscription();
@@ -144,6 +146,12 @@ export const ProfileScreen = ({ navigation }: any) => {
 
       // Load analysis history from database to calculate stats
       const dbHistory = await getAnalysisHistory(user.id);
+      
+      // Load free trial status
+      const freeTrialStatus = await getFreeTrialStatus();
+      if (freeTrialStatus) {
+        setFreeTrialRemaining(freeTrialStatus.freeTrialRemaining);
+      }
       
       const totalAnalyses = dbHistory.length;
       const scores = dbHistory.map((record: AnalysisHistoryRecord) => record.overall_score || 0);
@@ -486,44 +494,34 @@ export const ProfileScreen = ({ navigation }: any) => {
             <Text style={styles.joinDate}>Member since {new Date(profile.joinDate).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</Text>
           </View>
 
-          {/* Personal Stats - Display onboarding data */}
-          {(authProfile?.height || authProfile?.weight || authProfile?.birth_date) && (
-            <View style={styles.personalStatsSection}>
-              <Text style={styles.sectionTitle}>Personal Stats</Text>
-              <View style={styles.personalStatsGrid}>
-                {authProfile?.height && (
-                  <View style={styles.personalStatItem}>
-                    <Icon name="human-male-height" size={24} color="#4A90E2" />
-                    <Text style={styles.personalStatLabel}>Height</Text>
-                    <Text style={styles.personalStatValue}>
-                      {authProfile.height} {authProfile.unit_preference === 'imperial' ? 'in' : 'cm'}
-                    </Text>
+          {/* Subscription Banner - Only show if user doesn't have active subscription */}
+          {!subscriptionState.isSubscribed && freeTrialRemaining > 0 && (
+            <View style={styles.freeTrialBanner}>
+              <LinearGradient
+                colors={['#27AE60', '#229954', '#1E8449']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.subscriptionGradient}
+              >
+                <View style={styles.subscriptionContent}>
+                  <View style={styles.subscriptionLeft}>
+                    <Icon name="gift" size={28} color="#FFD700" />
+                    <View style={styles.subscriptionText}>
+                      <Text style={styles.subscriptionTitle}>Free Trial Active</Text>
+                      <Text style={styles.subscriptionSubtitle}>
+                        {freeTrialRemaining} free {freeTrialRemaining === 1 ? 'analysis' : 'analyses'} remaining
+                      </Text>
+                    </View>
                   </View>
-                )}
-                {authProfile?.weight && (
-                  <View style={styles.personalStatItem}>
-                    <Icon name="weight" size={24} color="#50C878" />
-                    <Text style={styles.personalStatLabel}>Weight</Text>
-                    <Text style={styles.personalStatValue}>
-                      {authProfile.weight} {authProfile.unit_preference === 'imperial' ? 'lbs' : 'kg'}
-                    </Text>
+                  <View style={styles.freeTrialBadge}>
+                    <Text style={styles.freeTrialBadgeText}>{freeTrialRemaining}</Text>
                   </View>
-                )}
-                {authProfile?.birth_date && (
-                  <View style={styles.personalStatItem}>
-                    <Icon name="cake-variant" size={24} color="#FF6B35" />
-                    <Text style={styles.personalStatLabel}>Age</Text>
-                    <Text style={styles.personalStatValue}>
-                      {Math.floor((new Date().getTime() - new Date(authProfile.birth_date).getTime()) / (365.25 * 24 * 60 * 60 * 1000))} years
-                    </Text>
-                  </View>
-                )}
-              </View>
+                </View>
+              </LinearGradient>
             </View>
           )}
 
-          {/* Subscription Banner - Only show if user doesn't have active subscription */}
-          {!subscriptionState.isSubscribed && (
+          {!subscriptionState.isSubscribed && freeTrialRemaining === 0 && (
             <TouchableOpacity
               style={styles.subscriptionBanner}
               onPress={async () => {
@@ -606,6 +604,42 @@ export const ProfileScreen = ({ navigation }: any) => {
               <Text style={styles.logoutText}>Sign Out</Text>
             </TouchableOpacity>
           </View>
+
+          {/* Personal Stats - Display onboarding data */}
+          {(authProfile?.height || authProfile?.weight || authProfile?.birth_date) && (
+            <View style={styles.personalStatsSection}>
+              <Text style={styles.sectionTitle}>Personal Stats</Text>
+              <View style={styles.personalStatsGrid}>
+                {authProfile?.height && (
+                  <View style={styles.personalStatItem}>
+                    <Icon name="human-male-height" size={24} color="#4A90E2" />
+                    <Text style={styles.personalStatLabel}>Height</Text>
+                    <Text style={styles.personalStatValue}>
+                      {authProfile.height} {authProfile.unit_preference === 'imperial' ? 'in' : 'cm'}
+                    </Text>
+                  </View>
+                )}
+                {authProfile?.weight && (
+                  <View style={styles.personalStatItem}>
+                    <Icon name="weight" size={24} color="#50C878" />
+                    <Text style={styles.personalStatLabel}>Weight</Text>
+                    <Text style={styles.personalStatValue}>
+                      {authProfile.weight} {authProfile.unit_preference === 'imperial' ? 'lbs' : 'kg'}
+                    </Text>
+                  </View>
+                )}
+                {authProfile?.birth_date && (
+                  <View style={styles.personalStatItem}>
+                    <Icon name="cake-variant" size={24} color="#FF6B35" />
+                    <Text style={styles.personalStatLabel}>Age</Text>
+                    <Text style={styles.personalStatValue}>
+                      {Math.floor((new Date().getTime() - new Date(authProfile.birth_date).getTime()) / (365.25 * 24 * 60 * 60 * 1000))} years
+                    </Text>
+                  </View>
+                )}
+              </View>
+            </View>
+          )}
 
           {/* Statistics Cards */}
           <View style={styles.statsContainer}>
@@ -1005,6 +1039,32 @@ const styles = StyleSheet.create({
   subscriptionSubtitle: {
     fontSize: 14,
     color: 'rgba(255, 255, 255, 0.9)',
+  },
+  freeTrialBanner: {
+    marginHorizontal: 20,
+    marginBottom: 20,
+    borderRadius: 16,
+    overflow: 'hidden',
+    elevation: 5,
+    shadowColor: '#27AE60',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
+  freeTrialBadge: {
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.4)',
+  },
+  freeTrialBadgeText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
   },
   actionButtons: {
     flexDirection: 'row',

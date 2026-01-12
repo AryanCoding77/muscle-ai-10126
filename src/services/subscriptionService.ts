@@ -60,11 +60,11 @@ export const getUserSubscriptionDetails = async (): Promise<SubscriptionDetails 
 };
 
 /**
- * Check if user can perform analysis
+ * Check if user can perform analysis (with free trial support)
  */
 export const canUserAnalyze = async (): Promise<CanAnalyzeResponse> => {
   try {
-    const { data, error } = await supabase.rpc('can_user_analyze');
+    const { data, error } = await supabase.rpc('can_user_analyze_with_trial');
 
     if (error) {
       console.error('❌ Error checking if user can analyze:', error);
@@ -80,6 +80,7 @@ export const canUserAnalyze = async (): Promise<CanAnalyzeResponse> => {
       analyses_remaining: 0,
       subscription_status: 'none',
       plan_name: 'none',
+      is_free_trial: false,
     };
   } catch (error) {
     console.error('❌ Exception in canUserAnalyze:', error);
@@ -364,6 +365,102 @@ export const resumeSubscription = async (subscriptionId: string): Promise<{ succ
       success: false,
       error: error instanceof Error ? error.message : 'Failed to resume subscription',
     };
+  }
+};
+
+/**
+ * Check if user needs to spin the wheel
+ */
+export const needsToSpinWheel = async (): Promise<boolean> => {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      return false;
+    }
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('has_spun_wheel')
+      .eq('id', user.id)
+      .single();
+
+    if (error) {
+      console.error('❌ Error checking spin status:', error);
+      return false;
+    }
+
+    return !data?.has_spun_wheel;
+  } catch (error) {
+    console.error('❌ Exception in needsToSpinWheel:', error);
+    return false;
+  }
+};
+
+/**
+ * Mark user as having spun the wheel
+ */
+export const markWheelAsSpun = async (): Promise<boolean> => {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      return false;
+    }
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({ 
+        has_spun_wheel: true,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', user.id);
+
+    if (error) {
+      console.error('❌ Error marking wheel as spun:', error);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('❌ Exception in markWheelAsSpun:', error);
+    return false;
+  }
+};
+
+/**
+ * Get user's free trial status
+ */
+export const getFreeTrialStatus = async (): Promise<{ 
+  freeTrialRemaining: number; 
+  hasFreeTrialAvailable: boolean;
+} | null> => {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      console.log('❌ No authenticated user for free trial status');
+      return null;
+    }
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('free_trial_analyses_remaining')
+      .eq('id', user.id)
+      .single();
+
+    if (error) {
+      console.error('❌ Error fetching free trial status:', error);
+      return null;
+    }
+
+    return {
+      freeTrialRemaining: data?.free_trial_analyses_remaining || 0,
+      hasFreeTrialAvailable: (data?.free_trial_analyses_remaining || 0) > 0,
+    };
+  } catch (error) {
+    console.error('❌ Exception in getFreeTrialStatus:', error);
+    return null;
   }
 };
 
