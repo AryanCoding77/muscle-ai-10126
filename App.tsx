@@ -31,6 +31,8 @@ import { ManageSubscriptionScreen } from './src/screens/ManageSubscriptionScreen
 import { NotificationScreen } from './src/screens/NotificationScreen';
 import { PrivacyPolicyScreen } from './src/screens/PrivacyPolicyScreen';
 import { TermsConditionsScreen } from './src/screens/TermsConditionsScreen';
+import { FreeTrialSpinScreen } from './src/screens/FreeTrialSpinScreen';
+import { FreeTrialSpinGate } from './src/components/FreeTrialSpinGate';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
 import { NotificationProvider } from './src/context/NotificationContext';
 import { ErrorBoundary } from './src/components/ErrorBoundary';
@@ -41,28 +43,31 @@ const Stack = createNativeStackNavigator();
 // Stack navigator for screens that need to be pushed on top of tabs
 function StackNavigator() {
   return (
-    <Stack.Navigator
-      screenOptions={{
-        headerShown: false,
-        contentStyle: {
-          backgroundColor: COLORS.background,
-        },
-        animation: 'slide_from_right',
-      }}
-    >
-      <Stack.Screen name="MainTabs" component={TabNavigator} />
-      <Stack.Screen name="Results" component={ResultsScreen as unknown as React.ComponentType<any>} />
-      <Stack.Screen name="History" component={HistoryScreen as unknown as React.ComponentType<any>} />
-      <Stack.Screen name="Comparison" component={ComparisonScreen as unknown as React.ComponentType<any>} />
-      <Stack.Screen name="Settings" component={SettingsScreen as unknown as React.ComponentType<any>} />
-      <Stack.Screen name="Notifications" component={NotificationScreen as unknown as React.ComponentType<any>} />
-      <Stack.Screen name="ExerciseDetail" component={ExerciseDetailScreen as unknown as React.ComponentType<any>} />
-      <Stack.Screen name="SubscriptionPlans" component={SubscriptionPlansScreen as unknown as React.ComponentType<any>} />
-      <Stack.Screen name="Payment" component={GooglePlayPaymentScreen as unknown as React.ComponentType<any>} />
-      <Stack.Screen name="ManageSubscription" component={ManageSubscriptionScreen as unknown as React.ComponentType<any>} />
-      <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen as unknown as React.ComponentType<any>} />
-      <Stack.Screen name="TermsConditions" component={TermsConditionsScreen as unknown as React.ComponentType<any>} />
-    </Stack.Navigator>
+    <FreeTrialSpinGate>
+      <Stack.Navigator
+        screenOptions={{
+          headerShown: false,
+          contentStyle: {
+            backgroundColor: COLORS.background,
+          },
+          animation: 'slide_from_right',
+        }}
+      >
+        <Stack.Screen name="MainTabs" component={TabNavigator} />
+        <Stack.Screen name="FreeTrialSpin" component={FreeTrialSpinScreen as unknown as React.ComponentType<any>} />
+        <Stack.Screen name="Results" component={ResultsScreen as unknown as React.ComponentType<any>} />
+        <Stack.Screen name="History" component={HistoryScreen as unknown as React.ComponentType<any>} />
+        <Stack.Screen name="Comparison" component={ComparisonScreen as unknown as React.ComponentType<any>} />
+        <Stack.Screen name="Settings" component={SettingsScreen as unknown as React.ComponentType<any>} />
+        <Stack.Screen name="Notifications" component={NotificationScreen as unknown as React.ComponentType<any>} />
+        <Stack.Screen name="ExerciseDetail" component={ExerciseDetailScreen as unknown as React.ComponentType<any>} />
+        <Stack.Screen name="SubscriptionPlans" component={SubscriptionPlansScreen as unknown as React.ComponentType<any>} />
+        <Stack.Screen name="Payment" component={GooglePlayPaymentScreen as unknown as React.ComponentType<any>} />
+        <Stack.Screen name="ManageSubscription" component={ManageSubscriptionScreen as unknown as React.ComponentType<any>} />
+        <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen as unknown as React.ComponentType<any>} />
+        <Stack.Screen name="TermsConditions" component={TermsConditionsScreen as unknown as React.ComponentType<any>} />
+      </Stack.Navigator>
+    </FreeTrialSpinGate>
   );
 }
 
