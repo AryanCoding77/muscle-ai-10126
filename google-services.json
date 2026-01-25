@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "322670190938",
+    "project_id": "muscleai-349b0",
+    "storage_bucket": "muscleai-349b0.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:322670190938:android:59e6bf69f2d2546e535363",
+        "android_client_info": {
+          "package_name": "com.muscleai.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBU83bi0jTIC0lP6KLGOiZ1P63Aym_O4Z0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -25,6 +25,7 @@
       "edgeToEdgeEnabled": true,
       "package": "com.muscleai.app",
       "versionCode": 10,
+      "googleServicesFile": "./google-services.json",
       "intentFilters": [
         {
           "action": "VIEW",
@@ -45,6 +46,7 @@
     },
     "plugins": [
       "./plugins/withAndroidBillingPermission.js",
+      "./plugins/withFirebase.js",
       [
         "expo-build-properties",
         {
