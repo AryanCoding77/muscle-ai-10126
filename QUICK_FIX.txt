@@ -1,0 +1,64 @@
+╔════════════════════════════════════════════════════════════╗
+║                                                            ║
+║              🎥 FIX VIDEO ERROR - 30 SECONDS               ║
+║                                                            ║
+╚════════════════════════════════════════════════════════════╝
+
+ERROR: "Cannot find native module 'ExponentAV'"
+
+FIX:
+────────────────────────────────────────────────────────────
+
+1. Stop Metro (Ctrl+C)
+
+2. Run this:
+   
+   restart-clean.bat
+   
+   OR
+   
+   npx expo start --clear
+
+3. Press 'a' to reload on Android
+
+4. Done! Video should work now.
+
+────────────────────────────────────────────────────────────
+
+WHY: expo-av is a native module. After installing it, you 
+     need to restart Metro with clean cache so it rebuilds 
+     the native code.
+
+WHAT'S READY:
+✅ Video code implemented
+✅ Spin wheel working (1, 2, 3 only)
+✅ Free trial system working
+✅ expo-av installed
+✅ Video file exists
+
+JUST NEED: Restart Metro bundler!
+
+────────────────────────────────────────────────────────────
+
+IF STILL NOT WORKING:
+
+Full rebuild:
+  npx expo prebuild --clean
+  npx expo run:android
+
+OR
+
+EAS build:
+  eas build --profile development --platform android
+
+────────────────────────────────────────────────────────────
+
+READ MORE:
+- README_CONTINUE_HERE.md (start here)
+- FIX_VIDEO_ERROR.md (detailed guide)
+- VIDEO_SETUP_COMPLETE.md (what was done)
+- CURRENT_STATUS.md (full status)
+
+╔════════════════════════════════════════════════════════════╗
+║  TL;DR: Run restart-clean.bat and press 'a' to reload     ║
+╚════════════════════════════════════════════════════════════╝
