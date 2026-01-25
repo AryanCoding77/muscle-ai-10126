@@ -54,12 +54,15 @@ export const FreeTrialSpinScreen: React.FC<FreeTrialSpinScreenProps> = ({
     // Randomly select 1, 2, or 3
     const actualWin = Math.floor(Math.random() * 3) + 1; // 1, 2, or 3
     
+    console.log('🎯 ========== SPIN START ==========');
     console.log('🎯 User will win:', actualWin, 'analyses');
     
     // Find the segment index for this value
     const targetSegmentIndex = segments.findIndex(seg => seg.value === actualWin);
     
-    console.log('🎲 Target segment index:', targetSegmentIndex);
+    console.log('🎲 Segments array:', segments.map((s, i) => `${i}:${s.value}`).join(', '));
+    console.log('🎲 Target segment index:', targetSegmentIndex, '(value:', actualWin, ')');
+    console.log('🎲 Target segment color:', segments[targetSegmentIndex].color);
     
     // Calculate the angle to rotate the wheel so the target segment is at the top
     // The wheel starts with segment 0 at the top (-90 degrees in SVG coordinates)
@@ -70,8 +73,10 @@ export const FreeTrialSpinScreen: React.FC<FreeTrialSpinScreenProps> = ({
     const fullRotations = 5 + Math.random() * 2;
     const totalRotation = fullRotations * 360 + targetAngle;
 
-    console.log('🎲 Target angle:', targetAngle);
-    console.log('🎲 Total rotation:', totalRotation);
+    console.log('🎲 Segment angle:', segmentAngle, 'degrees');
+    console.log('🎲 Target angle:', targetAngle, 'degrees');
+    console.log('🎲 Full rotations:', fullRotations.toFixed(2));
+    console.log('🎲 Total rotation:', totalRotation.toFixed(2), 'degrees');
 
     // Animate the spin
     Animated.timing(spinValue, {
@@ -83,7 +88,15 @@ export const FreeTrialSpinScreen: React.FC<FreeTrialSpinScreenProps> = ({
       // Haptic feedback when stopped
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       
-      console.log('✅ Spin complete! User won:', actualWin, 'analyses');
+      // Calculate final position to verify
+      const finalAngle = totalRotation % 360;
+      const normalizedAngle = finalAngle < 0 ? finalAngle + 360 : finalAngle;
+      
+      console.log('✅ ========== SPIN COMPLETE ==========');
+      console.log('✅ Final angle:', finalAngle.toFixed(2), 'degrees');
+      console.log('✅ Normalized angle:', normalizedAngle.toFixed(2), 'degrees');
+      console.log('✅ User won:', actualWin, 'analyses');
+      console.log('✅ Setting wonAnalyses to:', actualWin);
       
       setWonAnalyses(actualWin);
       setHasSpun(true);
@@ -95,7 +108,14 @@ export const FreeTrialSpinScreen: React.FC<FreeTrialSpinScreenProps> = ({
 
   const updateFreeTrialInDatabase = async (analyses: number) => {
     try {
-      if (!user?.id) return;
+      if (!user?.id) {
+        console.error('❌ No user ID found');
+        return;
+      }
+
+      console.log('💾 ========== DATABASE UPDATE ==========');
+      console.log('💾 Updating database for user:', user.id);
+      console.log('💾 Setting free_trial_analyses_remaining to:', analyses);
 
       const { error } = await supabase
         .from('profiles')
@@ -107,13 +127,24 @@ export const FreeTrialSpinScreen: React.FC<FreeTrialSpinScreenProps> = ({
         .eq('id', user.id);
 
       if (error) {
-        console.error('Error updating free trial:', error);
+        console.error('❌ Error updating free trial:', error);
       } else {
-        console.log(`✅ User won ${analyses} free analyses!`);
+        console.log(`✅ Database updated successfully! User has ${analyses} free analyses`);
         await markWheelAsSpun();
+        
+        // Verify the update
+        const { data: verifyData, error: verifyError } = await supabase
+          .from('profiles')
+          .select('free_trial_analyses_remaining')
+          .eq('id', user.id)
+          .single();
+        
+        if (!verifyError && verifyData) {
+          console.log('✅ Verification: Database shows', verifyData.free_trial_analyses_remaining, 'analyses');
+        }
       }
     } catch (error) {
-      console.error('Exception updating free trial:', error);
+      console.error('💥 Exception updating free trial:', error);
     }
   };
 

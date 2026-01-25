@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useRef, useEffect } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -6,10 +6,11 @@ import {
   TouchableOpacity,
   SafeAreaView,
   useWindowDimensions,
+  Image,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
-import { Video, ResizeMode } from 'expo-av';
+import { COLORS } from '../../config/constants';
 
 interface WelcomeScreenProps {
   onContinue: () => void;
@@ -17,15 +18,7 @@ interface WelcomeScreenProps {
 
 export const WelcomeScreen: React.FC<WelcomeScreenProps> = React.memo(({ onContinue }) => {
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
-  const videoRef = useRef<Video>(null);
   
-  useEffect(() => {
-    // Auto-play video when component mounts
-    if (videoRef.current) {
-      videoRef.current.playAsync();
-    }
-  }, []);
-
   const handleContinue = useCallback(async () => {
     try {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -36,7 +29,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = React.memo(({ onConti
   // Memoize responsive sizing
   const responsiveSizes = useMemo(() => ({
     phoneHeight: Math.min(screenHeight * 0.55, 500),
-    phoneWidth: Math.min(screenHeight * 0.55, 500) * 0.5, // 9:16 aspect ratio
+    phoneWidth: Math.min(screenHeight * 0.55, 500) * 0.5, // Aspect ratio for phone
     titleFontSize: Math.min(screenWidth * 0.095, 38),
     buttonPadding: Math.min(screenHeight * 0.022, 18),
   }), [screenWidth, screenHeight]);
@@ -50,31 +43,33 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = React.memo(({ onConti
     >
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.content}>
-          {/* Phone frame with video */}
+          {/* Phone frame with image */}
           <View style={styles.phoneContainer}>
             <View style={[
               styles.phoneFrame,
               {
-                width: responsiveSizes.phoneWidth,
                 height: responsiveSizes.phoneHeight,
+                width: responsiveSizes.phoneWidth,
               }
             ]}>
-              {/* Phone notch */}
-              <View style={styles.notch} />
+              {/* Phone frame border */}
+              <View style={styles.phoneBezel}>
+                {/* Image inside phone - replace with your demo image */}
+                <Image
+                  source={require('../../../assets/icon.png')} // Change this to your demo image
+                  style={styles.image}
+                  resizeMode="cover"
+                />
+                
+                {/* Overlay text on image */}
+                <View style={styles.imageOverlay}>
+                  <Text style={styles.overlayText}>🎥 Demo</Text>
+                  <Text style={styles.overlaySubtext}>AI Muscle Analysis</Text>
+                </View>
+              </View>
               
-              {/* Video player */}
-              <Video
-                ref={videoRef}
-                source={require('../../../assets/demo-video.mp4')}
-                style={styles.video}
-                resizeMode={ResizeMode.COVER}
-                isLooping
-                isMuted
-                shouldPlay
-              />
-              
-              {/* Phone bottom bar */}
-              <View style={styles.bottomBar} />
+              {/* Phone notch (optional) */}
+              <View style={styles.phoneNotch} />
             </View>
           </View>
 
@@ -127,34 +122,49 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.5,
     shadowRadius: 20,
-    elevation: 15,
-    overflow: 'hidden',
+    elevation: 10,
   },
-  notch: {
+  phoneBezel: {
+    flex: 1,
+    backgroundColor: '#000',
+    borderRadius: 28,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  image: {
+    width: '100%',
+    height: '100%',
+  },
+  imageOverlay: {
     position: 'absolute',
     top: 0,
-    left: '35%',
-    right: '35%',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  overlayText: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    marginBottom: 8,
+  },
+  overlaySubtext: {
+    fontSize: 16,
+    color: 'rgba(255, 255, 255, 0.9)',
+  },
+  phoneNotch: {
+    position: 'absolute',
+    top: 8,
+    left: '50%',
+    marginLeft: -50,
+    width: 100,
     height: 25,
     backgroundColor: '#1A1A1A',
     borderBottomLeftRadius: 15,
     borderBottomRightRadius: 15,
-    zIndex: 10,
-  },
-  video: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 28,
-  },
-  bottomBar: {
-    position: 'absolute',
-    bottom: 8,
-    left: '30%',
-    right: '30%',
-    height: 4,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 2,
-    opacity: 0.8,
   },
   bottomSection: {
     paddingBottom: '8%',
